@@ -16,3 +16,13 @@ ForEach ($module in $modulesToImport){
         Write-Error "Could not import $($module.name): $($_.Exception.Message)"
     }
 }
+$Functions = Get-ChildItem $PSScriptRoot\Functions\*.ps1 -ErrorAction SilentlyContinue
+foreach ($import in $Functions) {
+    Try {
+        . $import.fullname
+    }
+    Catch {
+        Write-Error "Failed to import function $($import.fullname): $_"
+    }
+}
+Set-PSReadlineKeyHandler Tab -Function MenuComplete
