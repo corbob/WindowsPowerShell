@@ -1,8 +1,9 @@
 Function Get-PCInformation {
     Param(
-        [String]$ComputerName
+        [String]$ComputerName,
+        [pscredential]$Credential
     )
-    $cimSession = New-CimSession $ComputerName -SessionOption (New-CimSessionOption -Protocol DCOM) -OperationTimeoutSec 1 -ErrorAction SilentlyContinue
+    $cimSession = New-CimSession $ComputerName -SessionOption (New-CimSessionOption -Protocol DCOM) -OperationTimeoutSec 1 -ErrorAction SilentlyContinue -Credential $admin
     if (-not $cimSession) {
         Write-warning "$ComputerName is offline."
     } else {
