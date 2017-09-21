@@ -1,3 +1,4 @@
+. $PSScriptRoot\Private\Variables.ps1
 $availableModules = Get-Module -ListAvailable | Select-Object Name
 # Modules.csv contains 
 $modulesToImport = Import-Csv "$PSScriptRoot\Private\Modules.csv"

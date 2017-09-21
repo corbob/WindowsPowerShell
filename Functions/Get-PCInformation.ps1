@@ -1,4 +1,4 @@
-Function Get-PCInformation {
+Function MY-Get-PCInformation {
     Param(
         [String]$ComputerName,
         [pscredential]$Credential
