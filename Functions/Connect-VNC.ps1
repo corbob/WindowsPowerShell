@@ -1,4 +1,4 @@
-Function MY-Connect-VNC {
+Function Connect-VNC {
     Param(
         [String]$ComputerName,
         [pscredential]$Credential,
