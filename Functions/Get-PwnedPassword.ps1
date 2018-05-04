@@ -1,11 +1,11 @@
 #http://jongurgul.com/blog/get-stringhash-get-filehash/ 
-Function Get-StringHash([String] $String,$HashName = "SHA1") 
-{ 
-  $StringBuilder = New-Object System.Text.StringBuilder 
-  [System.Security.Cryptography.HashAlgorithm]::Create($HashName).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($String))|%{ 
-  [Void]$StringBuilder.Append($_.ToString("x2")) 
-  } 
-  $StringBuilder.ToString() 
+Function Get-StringSHA1Hash([String] $String) { 
+    $SHA1 = [System.Security.Cryptography.Sha1]::create()
+    $StringBuilder = New-Object System.Text.StringBuilder 
+    $SHA1.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($String))| % { 
+        [Void]$StringBuilder.Append($_.ToString("x2")) 
+    } 
+    $StringBuilder.ToString() 
 }
 
 function Get-PwnedPassword {
@@ -28,43 +28,42 @@ function Get-PwnedPassword {
     [CmdletBinding()]
     Param
     (
-        [Parameter( 
-            ValueFromPipeline,
-            ValueFromPipelineByPropertyName, 
-            ValueFromRemainingArguments, 
-            ParameterSetName = 'Password')]
-        [ValidateNotNull()]
-        [ValidateNotNullOrEmpty()]
-        [String]
-        $Password,
         [Parameter(Mandatory, 
             ValueFromPipeline,
             ValueFromPipelineByPropertyName, 
-            ValueFromRemainingArguments, 
-            ParameterSetName = 'Credential')]
+            ValueFromRemainingArguments)]
         [ValidateNotNull()]
         [ValidateNotNullOrEmpty()]
-        [pscredential]
-        $Credential
+        $Lookup
     )
 
     Begin {
         [System.Net.ServicePointManager]::SecurityProtocol = "Tls12"
     }
     Process {
-        $count = 0
-        if ($Password) {
-            $ToCheck = $Password
+        foreach ($value in $Lookup) {
+            $count = 0
+            switch ($value.getType().ToString()) {
+                'System.Management.Automation.PSCredential' { 
+                    $ToCheck = $value.GetNetworkCredential().Password
+                    break
+                }
+                'System.String' {
+                    $ToCheck = $value
+                    break
+                }
+                Default {
+                    $count = -1
+                    return
+                }
+            }
+            $SHA1 = Get-StringSHA1Hash -String $ToCheck
+            $Result = Invoke-RestMethod -Uri "https://api.pwnedpasswords.com/range/$($SHA1[0..4] -join '')"
+            $There = $Result -split "`r`n" | Where-Object { $PSItem -like "$($SHA1[5..$($SHA1.Length)] -join '')*" }
+            if ($null -ne $There) {
+                $count = ($There -split ':')[1]
+            }
+            Write-Output $count
         }
-        if ($Credential) {
-            $ToCheck = $Credential.GetNetworkCredential().Password
-        }
-        $SHA1 = Get-StringHash -String $ToCheck
-        $Result = Invoke-RestMethod -Uri "https://api.pwnedpasswords.com/range/$($SHA1[0..4] -join '')"
-        $There = $Result -split "`r`n" | Where-Object { $PSItem -like "$($SHA1[5..$($SHA1.Length)] -join '')*" }
-        if ($null -ne $There) {
-            $count = ($There -split ':')[1]
-        }
-        Write-Output $count
     }
 }
