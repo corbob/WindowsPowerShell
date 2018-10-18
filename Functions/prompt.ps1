@@ -1,6 +1,8 @@
 function prompt {
     $lastCommand = $?
     $command = (history | measure).count
+    $lastCommandHistory = Get-History $command
+    $lastCommandExecutionTime = "$(($lastCommandHistory.EndExecutionTime - $lastCommandHistory.StartExecutionTime).milliseconds) ms"
     $Administrator = $false
     if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
         $currentUser = [Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -51,8 +53,15 @@ function prompt {
     if (-not $lastCommand) {
         $hook = 'Red'
     }
-    write-host -BackgroundColor $fgColor -ForegroundColor Black "<#$command"
-    write-host -ForegroundColor $providerColor "$($executionContext.SessionState.Path.CurrentLocation)"
+    write-host -BackgroundColor $fgColor -ForegroundColor Black "<#$command" -NoNewline
+    Write-Host " - $lastCommandExecutionTime"
+    if ($null -eq $GitPromptScriptBlock) {
+        write-host -ForegroundColor $providerColor "$($executionContext.SessionState.Path.CurrentLocation)"
+    }
+    else {
+        & $GitPromptScriptBlock
+        Write-Host " "
+    }
     Write-Host -ForegroundColor Black -BackgroundColor $hook "#>" -NoNewline
     " "
 }
