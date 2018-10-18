@@ -1,8 +1,12 @@
+If (Get-Module -ListAvailable posh-git) {
+    Import-Module posh-git
+    $GitPromptSettings.DefaultPromptAbbreviateHomeDirectory = $true
+    $GitPromptSettings.DefaultPromptSuffix = $null
+}
 function prompt {
     $lastCommand = $?
-    $command = (history | measure).count
-    $lastCommandHistory = Get-History $command
-    $lastCommandExecutionTime = "$(($lastCommandHistory.EndExecutionTime - $lastCommandHistory.StartExecutionTime).milliseconds) ms"
+    $command = Get-History -count 1
+    $lastCommandExecutionTime = "$(($command.EndExecutionTime - $command.StartExecutionTime).totalmilliseconds) ms"
     $Administrator = $false
     if (($PSVersionTable.PSVersion.Major -le 5) -or $IsWindows) {
         $currentUser = [Security.Principal.WindowsPrincipal]([Security.Principal.WindowsIdentity]::GetCurrent())
@@ -53,8 +57,8 @@ function prompt {
     if (-not $lastCommand) {
         $hook = 'Red'
     }
-    write-host -BackgroundColor $fgColor -ForegroundColor Black "<#$command" -NoNewline
-    Write-Host " - $lastCommandExecutionTime"
+    write-host -BackgroundColor $fgColor -ForegroundColor Black "`n<#" -NoNewline
+    Write-Host " $lastCommandExecutionTime"
     if ($null -eq $GitPromptScriptBlock) {
         write-host -ForegroundColor $providerColor "$($executionContext.SessionState.Path.CurrentLocation)"
     }
@@ -62,6 +66,7 @@ function prompt {
         & $GitPromptScriptBlock
         Write-Host " "
     }
+    Write-Host "$($command.Id) " -NoNewline
     Write-Host -ForegroundColor Black -BackgroundColor $hook "#>" -NoNewline
     " "
 }
